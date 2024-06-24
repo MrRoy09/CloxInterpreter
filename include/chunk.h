@@ -1,5 +1,4 @@
 #pragma once
-
 #include "common.h"
 #include "value.h"
 #include <vector>
