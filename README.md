@@ -1,6 +1,6 @@
 # About
 
-A simple scripting language designed following the book "Crafting Interpreters" to learn aboout compiler design.
+A simple scripting language designed following the book "Crafting Interpreters" to learn aboout interpreter design.
 
 # Build
 
