@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include "common.h"
 #include "chunk.h"
 #include "debug.h"
 #include "vm.h"
@@ -27,12 +26,20 @@ static void repl(VM *vm)
     }
 }
 
+void usage() {
+    std::cout << "Usage: InterpreterDev <filename>" << std::endl;
+}
+
 int main(int argc, const char *argv[])
 {
     VM vm;
     if (argc == 2)
     {
         std::ifstream code(argv[1]);
+        if (!code) {
+            std::cout << "file not found" << "\n";
+            return 1;
+        }
         std::stringstream buffer;
         buffer << code.rdbuf();
         std::string code_string = buffer.str();
@@ -40,7 +47,8 @@ int main(int argc, const char *argv[])
     }
     else
     {
-        std::cout << "Missing argument filepath" << "\n";
+       usage();
     }
+
     return 0;
 }

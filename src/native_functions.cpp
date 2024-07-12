@@ -10,9 +10,19 @@ Value Clock(int argCount, Value* args) {
 	return Value(x);
 }
 
+Value StringLen(int argCount, Value* args) {
+	if (args->value.index() != 2) {
+		std::cout << "Incorrect value type for len, nill Returned "<<"\n";
+		return Value();
+	}
+	return Value((double)args->returnString().length());
+}
+
 NativeFunction clock_function = NativeFunction(0, Clock);
+NativeFunction stringlen = NativeFunction(1, StringLen);
 
 void initNativeFunctions(std::unordered_map<std::string, NativeFunction>* natives) {
 	natives->insert({"clock", clock_function});
+	natives->insert({ "len",stringlen });
 }
 

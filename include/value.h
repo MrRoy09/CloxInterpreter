@@ -25,7 +25,7 @@ public:
 	}
 
 	Value() {
-		this->isNill = 0;
+		this->isNill = 1;
 	}
 
 	void printValue() {
