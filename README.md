@@ -14,15 +14,15 @@ cmake -S . -B build/ -D CMAKE_BUILD_TYPE=Release
 
 ```
 fun fib(n){
-    var x=0; // var to declare variable, scope rules apply
+    var x=0;
     if(n<2){
         x =n;
     }
     else{
         x = fib(n-1)+fib(n-2);
     }
-    return x;  // return must be at the end of every function
-               // use "return;" to return no value
+    return x;
+
 }
 var start=clock();
 print fib(35);
@@ -31,7 +31,7 @@ print clock()-start;
 
 ```
 var start = clock();
-var x =0; // global variable since declared in outermost scope
+var x =0;
 while(x<100000000){
     x=x+1;
 }
@@ -47,4 +47,7 @@ for(x = 0; x<1000;x=x+1){
 
 # Run
 
-<b>Run executable passing file name of code as argument</b>
+<b>Run executable passing file name of code as argument</b> <br>
+<b> Note : Every function must have a return at end.
+use
+` return;` to return no value
