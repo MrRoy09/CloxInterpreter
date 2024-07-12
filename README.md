@@ -50,4 +50,6 @@ for(x = 0; x<1000;x=x+1){
 <b>Run executable passing file name of code as argument</b> <br>
 <b> Note : Every function must have a return at end.
 use
-` return;` to return no value
+`return;` to return no value <br>
+`clock()` returns time elapsed from start of execution in ms <br>
+`len()` returns length of string
