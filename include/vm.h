@@ -10,6 +10,8 @@
 #include "native_functions.h"
 
 #define FRAMES_MAX 1000
+#define StackFrameReserveSize 50
+#define StackReserveSize 50
 
 typedef enum
 {
@@ -30,20 +32,56 @@ public:
 	int ip_offset;
 };
 
+class StackFramePool
+{
+public:
+	StackFrame *allocate(const std::string &name, size_t offset, size_t ip)
+	{
+		if (!pool.empty())
+		{
+			StackFrame *frame = pool.back();
+			pool.pop_back();
+			new (frame) StackFrame(name, offset, ip); // Placement new
+			return frame;
+		}
+		return new StackFrame(name, offset, ip);
+	}
+
+	void deallocate(StackFrame *frame)
+	{
+		frame->~StackFrame();
+		pool.push_back(frame);
+	}
+
+	~StackFramePool()
+	{
+		for (auto frame : pool)
+		{
+			delete frame;
+		}
+	}
+
+private:
+	std::vector<StackFrame *> pool; // Pool of reusable StackFrames
+};
+
 class VM
 {
 public:
+	int ip;
 	Chunk *chunk;
 	std::vector<Value> stack;
-
-	int ip;
 	std::unordered_map<std::string, Value> vm_globals;
 	std::unordered_map<std::string, std::shared_ptr<Chunk>> vm_functions;
 	std::unordered_map<std::string, NativeFunction> vm_native_functions;
-	std::vector<std::unique_ptr<StackFrame>> vm_stackFrames;
+	std::vector<StackFrame *> vm_stackFrames;
+	std::vector<Chunk *> p_chunk_stackFrames;
+	StackFramePool framePool;
 
 	InterpretResult interpret(std::string source)
 	{
+		vm_stackFrames.reserve(StackFrameReserveSize);
+		stack.reserve(StackReserveSize);
 		initNativeFunctions(&vm_native_functions);
 		Chunk chunk = Chunk(1);
 		vm_functions["main"] = std::make_shared<Chunk>(0);
@@ -54,7 +92,8 @@ public:
 		this->chunk->function.funcName = "main";
 		this->ip = 0;
 		std::string name = "main";
-		vm_stackFrames.push_back(std::make_unique<StackFrame>(name, this->stack.size(), 0));
+		vm_stackFrames.push_back(framePool.allocate(name, this->stack.size(), 0));
+
 		InterpretResult result = run();
 		return result;
 	}
@@ -72,8 +111,9 @@ public:
 
 	void destroyStackFrame()
 	{
-		int stack_offset = (vm_stackFrames.end() - 1)->get()->stack_start_offset;
-		int ip_offset = (vm_stackFrames.end() - 1)->get()->ip_offset;
+		int stack_offset = (vm_stackFrames.back())->stack_start_offset;
+		int ip_offset = (vm_stackFrames.back())->ip_offset;
+		framePool.deallocate(vm_stackFrames.back());
 		vm_stackFrames.pop_back();
 		stack.erase(stack.begin() + stack_offset, stack.end());
 		this->ip = ip_offset;
@@ -93,8 +133,8 @@ public:
 				{
 					destroyStackFrame();
 					stack.push_back(Value());
-					this->chunk = vm_functions[(vm_stackFrames.end() - 1)->get()->function_name].get();
-					this->chunk->function.funcName = (vm_stackFrames.end() - 1)->get()->function_name;
+					this->chunk = vm_functions[(vm_stackFrames.back())->function_name].get();
+					this->chunk->function.funcName = (vm_stackFrames.back())->function_name;
 					size = this->chunk->opcodes.size();
 				}
 				break;
@@ -104,10 +144,10 @@ public:
 				ip += 1;
 				Value returnValue = stack.back();
 				destroyStackFrame();
-				this->chunk = vm_functions[(vm_stackFrames.end() - 1)->get()->function_name].get();
-				this->chunk->function.funcName = (vm_stackFrames.end() - 1)->get()->function_name;
-				stack.emplace_back(returnValue);
+				this->chunk = vm_functions[(vm_stackFrames.back())->function_name].get();
+				this->chunk->function.funcName = (vm_stackFrames.back())->function_name;
 				size = this->chunk->opcodes.size();
+				stack.emplace_back(returnValue);
 				break;
 			}
 
@@ -361,7 +401,7 @@ public:
 
 			case OP_GET_LOCAL:
 			{
-				int slot = chunk->opcodes[++ip] + (vm_stackFrames.end() - 1)->get()->stack_start_offset;
+				int slot = chunk->opcodes[++ip] + (vm_stackFrames.back())->stack_start_offset;
 				stack.push_back(stack[slot]);
 				ip += 1;
 				break;
@@ -369,7 +409,7 @@ public:
 
 			case OP_SET_LOCAL:
 			{
-				uint8_t slot = chunk->opcodes[++ip] + (vm_stackFrames.end() - 1)->get()->stack_start_offset;
+				uint8_t slot = chunk->opcodes[++ip] + (vm_stackFrames.back())->stack_start_offset;
 				this->stack[slot] = stack.back();
 				ip += 1;
 				break;
@@ -421,11 +461,11 @@ public:
 					}
 					if (vm_stackFrames.size() > 2)
 					{
-						vm_stackFrames.emplace_back(std::make_unique<StackFrame>(name_function, stack.size() - vm_stackFrames[1].get()->stack_start_offset - arity, ip + 2));
+						vm_stackFrames.emplace_back(framePool.allocate(name_function, stack.size() - vm_stackFrames[1]->stack_start_offset - arity, ip + 2));
 					}
 					else
 					{
-						vm_stackFrames.emplace_back(std::make_unique<StackFrame>(name_function, stack.size() - vm_stackFrames.back().get()->stack_start_offset - arity, ip + 2));
+						vm_stackFrames.emplace_back(framePool.allocate(name_function, stack.size() - vm_stackFrames.back()->stack_start_offset - arity, ip + 2));
 					}
 					ip = 0;
 					this->chunk = vm_functions[name_function].get();
