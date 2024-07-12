@@ -75,7 +75,6 @@ public:
 	std::unordered_map<std::string, std::shared_ptr<Chunk>> vm_functions;
 	std::unordered_map<std::string, NativeFunction> vm_native_functions;
 	std::vector<StackFrame *> vm_stackFrames;
-	std::vector<Chunk *> p_chunk_stackFrames;
 	StackFramePool framePool;
 
 	InterpretResult interpret(std::string source)
@@ -93,7 +92,6 @@ public:
 		this->ip = 0;
 		std::string name = "main";
 		vm_stackFrames.push_back(framePool.allocate(name, this->stack.size(), 0));
-
 		InterpretResult result = run();
 		return result;
 	}
@@ -121,6 +119,12 @@ public:
 
 	InterpretResult run()
 	{
+
+		// Used for function call, helps avoid re-assigning same variable incase of recursive function call
+		bool isNativeFn = 0;
+		bool isRecursive = 0;
+		int arity = 0;
+
 		int size = chunk->opcodes.size();
 		while (ip < size)
 		{
@@ -144,9 +148,13 @@ public:
 				ip += 1;
 				Value returnValue = stack.back();
 				destroyStackFrame();
-				this->chunk = vm_functions[(vm_stackFrames.back())->function_name].get();
-				this->chunk->function.funcName = (vm_stackFrames.back())->function_name;
-				size = this->chunk->opcodes.size();
+				if (vm_stackFrames.back()->function_name != this->chunk->function.funcName)
+				{ // check if function is recursive, if it is, no need to lookup map
+					this->chunk = vm_functions[(vm_stackFrames.back())->function_name].get();
+					this->chunk->function.funcName = (vm_stackFrames.back())->function_name;
+					size = this->chunk->opcodes.size();
+				}
+
 				stack.emplace_back(returnValue);
 				break;
 			}
@@ -442,7 +450,24 @@ public:
 			{
 				int offset = chunk->opcodes[ip + 1];
 				std::string name_function = this->chunk->constants[offset].returnString();
-				if (vm_native_functions.count(name_function) != 0)
+				if (chunk->function.funcName == name_function)
+				{
+					isRecursive = 1;
+				}
+				else
+				{
+					isRecursive = 0;
+					if (vm_native_functions.count(name_function) == 0)
+					{
+						isNativeFn = 0;
+					}
+					else
+					{
+						isNativeFn = 1;
+					}
+				}
+
+				if (isNativeFn)
 				{
 					NativeFn function = vm_native_functions.at(name_function).function;
 					Value *arguments = stack.size() == 0 ? NULL : &stack.back() - vm_native_functions.at(name_function).arguments + 1;
@@ -452,7 +477,13 @@ public:
 				}
 				else
 				{
-					int arity = vm_functions[name_function].get()->function.arity;
+
+					if (!isRecursive)
+					{
+						this->chunk = vm_functions[name_function].get();
+						arity = vm_functions[name_function].get()->function.arity;
+						size = this->chunk->opcodes.size();
+					}
 					if (!checkStackFrameOverflow())
 					{
 						runtimeError("StackFrame overflow");
@@ -468,8 +499,6 @@ public:
 						vm_stackFrames.emplace_back(framePool.allocate(name_function, stack.size() - vm_stackFrames.back()->stack_start_offset - arity, ip + 2));
 					}
 					ip = 0;
-					this->chunk = vm_functions[name_function].get();
-					size = this->chunk->opcodes.size();
 					break;
 				}
 			}
