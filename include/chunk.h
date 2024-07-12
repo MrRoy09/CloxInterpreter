@@ -5,7 +5,9 @@
 #include "objects.h"
 #include "tokens.h"
 #include "locals.h"
-typedef enum {
+#include <memory>
+typedef enum
+{
 	OP_RETURN,
 	OP_RETURN_VALUE,
 	OP_CONSTANT,
@@ -34,38 +36,41 @@ typedef enum {
 	OP_CALL,
 } OpCode;
 
-
-class Chunk{
+class Chunk
+{
 public:
 	std::vector<int> opcodes;
 	std::vector<Value> constants;
 	std::vector<int> lines;
 	FunctionObject function;
-	std::vector<std::unique_ptr<Local>>locals = {};
+	std::vector<std::unique_ptr<Local>> locals = {};
 	int localCount;
 	int scopeDepth;
 	int id;
 
-	Chunk(int id) {
-		if (id == 10) {
+	Chunk(int id)
+	{
+		if (id == 10)
+		{
 			scopeDepth = 1;
 		}
-		else {
+		else
+		{
 			scopeDepth = 0;
 		}
 		localCount = 0;
 		this->id = id;
 	}
 
-	
-	void WriteChunk(int opcode,int line) {
+	void WriteChunk(int opcode, int line)
+	{
 		opcodes.push_back(opcode);
 		lines.push_back(line);
 	}
 
-	int AddConstant(Value constant) {
+	int AddConstant(Value constant)
+	{
 		constants.push_back(constant);
-		return constants.size()-1;
+		return constants.size() - 1;
 	}
 };
-
