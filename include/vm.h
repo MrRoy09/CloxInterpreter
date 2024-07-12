@@ -95,10 +95,7 @@ public:
 		vm_stackFrames.push_back(framePool.allocate(name, this->stack.size(), 0));
 
 		InterpretResult result = run();
-		if (result != INTERPRET_OK)
-		{
-			return result;
-		}
+		return result;
 	}
 
 	void runtimeError()
