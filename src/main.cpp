@@ -26,8 +26,9 @@ static void repl(VM *vm)
     }
 }
 
-void usage() {
-    std::cout << "Usage: InterpreterDev <filename>" << std::endl;
+void usage()
+{
+    std::cout << "Usage: ./Clox <filename>" << std::endl;
 }
 
 int main(int argc, const char *argv[])
@@ -36,7 +37,8 @@ int main(int argc, const char *argv[])
     if (argc == 2)
     {
         std::ifstream code(argv[1]);
-        if (!code) {
+        if (!code)
+        {
             std::cout << "file not found" << "\n";
             return 1;
         }
@@ -47,7 +49,7 @@ int main(int argc, const char *argv[])
     }
     else
     {
-       usage();
+        usage();
     }
 
     return 0;

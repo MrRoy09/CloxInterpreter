@@ -43,13 +43,13 @@ public:
 		switch (value.index())
 		{
 		case 0:
-			std::cout << std::get<bool>(value) << "\n";
+			std::cout << std::get<bool>(value);
 			break;
 		case 1:
-			std::cout << std::get<double>(value) << "\n";
+			std::cout << std::get<double>(value);
 			break;
 		case 2:
-			std::cout << std::get<std::string>(value) << "\n";
+			std::cout << std::get<std::string>(value);
 			break;
 		}
 	}
