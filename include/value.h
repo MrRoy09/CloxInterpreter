@@ -4,36 +4,44 @@
 #include <stdexcept>
 #include "objects.h"
 
-class Value {
+class Value
+{
 public:
 	bool isNill;
 	std::variant<bool, double, std::string> value;
 
-	Value(bool value) {
+	Value(bool value)
+	{
 		this->isNill = 0;
 		this->value = value;
 	}
 
-	Value(double value) {
+	Value(double value)
+	{
 		this->isNill = 0;
 		this->value = value;
 	}
 
-	Value(std::string string) {
+	Value(std::string string)
+	{
 		this->isNill = 0;
 		this->value = string;
 	}
 
-	Value() {
+	Value()
+	{
 		this->isNill = 1;
 	}
 
-	void printValue() {
-		if (isNill) {
+	void printValue()
+	{
+		if (isNill)
+		{
 			std::cout << "NILL" << "\n";
 			return;
 		}
-		switch (value.index()) {
+		switch (value.index())
+		{
 		case 0:
 			std::cout << std::get<bool>(value) << "\n";
 			break;
@@ -46,41 +54,55 @@ public:
 		}
 	}
 
-	bool returnBool() {
-		if (std::holds_alternative<bool>(value)) {
+	bool returnBool()
+	{
+		if (std::holds_alternative<bool>(value))
+		{
 			return std::get<bool>(value);
 		}
-		else if (std::holds_alternative<double>(value)) {
+		else if (std::holds_alternative<double>(value))
+		{
 			return std::get<double>(value);
 		}
-		else {
+		else
+		{
 			throw std::bad_variant_access();
 		}
 	}
 
-	double returnDouble() {
-		if (std::holds_alternative<double>(value)) {
-			return std::get <double>(value);
+	double returnDouble()
+	{
+		if (std::holds_alternative<double>(value))
+		{
+			return std::get<double>(value);
 		}
-		else {
+		else
+		{
 			throw std::bad_variant_access();
 		}
 	}
 
-	std::string returnString() {
-		if (std::holds_alternative<std::string>(value)) {
-			return std::get <std::string>(value);
+	std::string returnString()
+	{
+		if (std::holds_alternative<std::string>(value))
+		{
+			return std::get<std::string>(value);
 		}
-		else {
+		else
+		{
 			throw std::bad_variant_access();
 		}
 	}
 
-	bool ValuesEqual(Value b) {
-		if (this->value.index() != b.value.index()) return false;
-		if (this->isNill && b.isNill) return true;
+	bool ValuesEqual(Value b)
+	{
+		if (this->value.index() != b.value.index())
+			return false;
+		if (this->isNill && b.isNill)
+			return true;
 
-		switch (this->value.index()) {
+		switch (this->value.index())
+		{
 		case 0:
 			return this->returnBool() == b.returnBool();
 			break;
@@ -89,9 +111,8 @@ public:
 			break;
 		case 2:
 			return this->returnString() == b.returnString();
+		default:
+			return 0;
 		}
 	}
 };
-
-
-
