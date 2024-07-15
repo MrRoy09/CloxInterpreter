@@ -7,7 +7,13 @@ A simple scripting language designed following the book "Crafting Interpreters" 
 Build using CMAKE to generate project files.
 
 ```
-cmake -S . -B build/ -D CMAKE_BUILD_TYPE=Release
+cmake -S . -B build/
+```
+
+Compiling with clang provides a performance boost of upto 40% depending on the program. To configure CMAKE to use clang -
+
+```
+export CXX=/usr/bin/clang++
 ```
 
 # Syntax

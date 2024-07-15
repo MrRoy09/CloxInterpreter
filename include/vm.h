@@ -23,28 +23,28 @@ typedef enum
 class StackFrame
 {
 public:
-	StackFrame(const std::string name, int offset, int ipoffset) : function_name(name), stack_start_offset(offset), ip_offset(ipoffset)
+	StackFrame(const std::string name, int offset, int *instruction_pointer) : function_name(name), stack_start_offset(offset), instruction_pointer_offset(instruction_pointer)
 	{
 	}
 
 	const std::string function_name;
 	int stack_start_offset;
-	int ip_offset;
+	int *instruction_pointer_offset;
 };
 
 class StackFramePool
 {
 public:
-	StackFrame *allocate(const std::string &name, size_t offset, size_t ip)
+	StackFrame *allocate(const std::string &name, size_t offset, int *instruction_p_offset)
 	{
 		if (!pool.empty())
 		{
 			StackFrame *frame = pool.back();
 			pool.pop_back();
-			new (frame) StackFrame(name, offset, ip); // Placement new
+			new (frame) StackFrame(name, offset, instruction_p_offset); // Placement new
 			return frame;
 		}
-		return new StackFrame(name, offset, ip);
+		return new StackFrame(name, offset, instruction_p_offset);
 	}
 
 	void deallocate(StackFrame *frame)
@@ -68,7 +68,7 @@ private:
 class VM
 {
 public:
-	int ip;
+	int *instruction_pointer;
 	Chunk *chunk;
 	std::vector<Value> stack;
 	std::unordered_map<std::string, Value> vm_globals;
@@ -89,9 +89,9 @@ public:
 		bool compilation_result = compiler.compile();
 		this->chunk = vm_functions["main"].get();
 		this->chunk->function.funcName = "main";
-		this->ip = 0;
+		this->instruction_pointer = this->chunk->opcodes.data();
 		std::string name = "main";
-		vm_stackFrames.push_back(framePool.allocate(name, this->stack.size(), 0));
+		vm_stackFrames.push_back(framePool.allocate(name, this->stack.size(), this->instruction_pointer));
 		InterpretResult result = run();
 		return result;
 	}
@@ -110,58 +110,55 @@ public:
 	void destroyStackFrame()
 	{
 		int stack_offset = (vm_stackFrames.back())->stack_start_offset;
-		int ip_offset = (vm_stackFrames.back())->ip_offset;
+		int *instruction_pointer = (vm_stackFrames.back())->instruction_pointer_offset;
 		framePool.deallocate(vm_stackFrames.back());
 		vm_stackFrames.pop_back();
 		stack.erase(stack.begin() + stack_offset, stack.end());
-		this->ip = ip_offset;
+		this->instruction_pointer = instruction_pointer;
 	}
 
 	InterpretResult run()
 	{
-
-		// Used for function call, helps avoid re-assigning same variable incase of recursive function call
 		bool isNativeFn = 0;
 		bool isRecursive = 0;
 		int arity = 0;
 
-		int size = chunk->opcodes.size();
-		while (ip < size)
+		while (1)
 		{
-			int opcode = chunk->opcodes[this->ip];
-			switch (opcode)
+			switch (*instruction_pointer)
 			{
 			case OP_RETURN:
-				ip += 1;
+				instruction_pointer += 1;
 				if (chunk->function.funcName != "main")
 				{
 					destroyStackFrame();
 					stack.push_back(Value());
 					this->chunk = vm_functions[(vm_stackFrames.back())->function_name].get();
 					this->chunk->function.funcName = (vm_stackFrames.back())->function_name;
-					size = this->chunk->opcodes.size();
+				}
+				else
+				{
+					return INTERPRET_OK;
 				}
 				break;
 
 			case OP_RETURN_VALUE:
 			{
-				ip += 1;
+				instruction_pointer += 1;
 				Value returnValue = stack.back();
 				destroyStackFrame();
 				if (vm_stackFrames.back()->function_name != this->chunk->function.funcName)
 				{ // check if function is recursive, if it is, no need to lookup map
 					this->chunk = vm_functions[(vm_stackFrames.back())->function_name].get();
 					this->chunk->function.funcName = (vm_stackFrames.back())->function_name;
-					size = this->chunk->opcodes.size();
 				}
-
 				stack.emplace_back(returnValue);
 				break;
 			}
 
 			case OP_CONSTANT:
-				stack.emplace_back(chunk->constants[chunk->opcodes[this->ip + 1]]);
-				ip += 2;
+				stack.emplace_back(chunk->constants[*(instruction_pointer + 1)]);
+				instruction_pointer += 2;
 				break;
 
 			case OP_NEGATE:
@@ -175,7 +172,7 @@ public:
 				double val = -(stack.back().returnDouble());
 				stack.pop_back();
 				stack.push_back(Value(val));
-				ip += 1;
+				instruction_pointer += 1;
 				break;
 			}
 
@@ -184,7 +181,7 @@ public:
 				if (stack.back().value.index() != (stack.end() - 2)->value.index())
 				{
 					runtimeError("Cannot perform addition between given types");
-					ip += 1;
+					instruction_pointer += 1;
 					return INTERPRET_RUNTIME_ERROR;
 					break;
 				};
@@ -193,7 +190,7 @@ public:
 				case 0:
 				{
 					runtimeError("Operation not permitted between given types");
-					ip += 1;
+					instruction_pointer += 1;
 					return INTERPRET_RUNTIME_ERROR;
 					break;
 				}
@@ -204,7 +201,7 @@ public:
 					double val2 = stack.back().returnDouble();
 					stack.pop_back();
 					stack.emplace_back(Value(val1 + val2));
-					ip += 1;
+					instruction_pointer += 1;
 					break;
 				}
 				case 2:
@@ -214,7 +211,7 @@ public:
 					std::string val2 = stack.back().returnString();
 					stack.pop_back();
 					stack.emplace_back(Value(val2 + val1));
-					ip += 1;
+					instruction_pointer += 1;
 					break;
 				}
 				}
@@ -227,7 +224,7 @@ public:
 				double val2 = -stack.back().returnDouble();
 				stack.pop_back();
 				stack.emplace_back(std::move(Value(val1 - val2)));
-				ip += 1;
+				instruction_pointer += 1;
 				break;
 			}
 
@@ -238,7 +235,7 @@ public:
 				double val2 = -stack.back().returnDouble();
 				stack.pop_back();
 				stack.push_back(Value(val1 * val2));
-				ip += 1;
+				instruction_pointer += 1;
 				break;
 			}
 
@@ -251,11 +248,11 @@ public:
 				{
 					stack.pop_back();
 					stack.push_back(Value(val2 / val1));
-					ip += 1;
+					instruction_pointer += 1;
 				}
 				else
 				{
-					std::cout << "Error division by zero at line " << chunk->lines[ip];
+					std::cout << "Error division by zero at line " << chunk->lines[(instruction_pointer - chunk->opcodes.data()) / sizeof(int)];
 					return INTERPRET_RUNTIME_ERROR;
 				}
 				break;
@@ -264,8 +261,7 @@ public:
 			case OP_NIL:
 			{
 				stack.push_back(Value("nil"));
-				ip++;
-
+				instruction_pointer += 1;
 				break;
 			}
 
@@ -273,8 +269,7 @@ public:
 			{
 				bool val = 1;
 				stack.push_back(Value(val));
-				ip++;
-
+				instruction_pointer += 1;
 				break;
 			}
 
@@ -282,8 +277,7 @@ public:
 			{
 				bool val = 0;
 				stack.push_back(Value(val));
-				ip++;
-
+				instruction_pointer += 1;
 				break;
 			}
 
@@ -294,7 +288,8 @@ public:
 					bool val = stack.back().returnBool();
 					stack.pop_back();
 					stack.push_back(Value(!val));
-					ip++;
+					instruction_pointer += 1;
+
 					break;
 				}
 				else if (std::holds_alternative<double>(stack.back().value))
@@ -302,7 +297,8 @@ public:
 					bool val = stack.back().returnDouble();
 					stack.pop_back();
 					stack.push_back(Value(!val));
-					ip++;
+					instruction_pointer += 1;
+
 					break;
 				}
 				else if (stack.back().isNill)
@@ -310,13 +306,15 @@ public:
 					bool val = 1;
 					stack.pop_back();
 					stack.push_back(Value(val));
-					ip++;
+					instruction_pointer += 1;
+
 					break;
 				}
 				else
 				{
 					runtimeError("Error encountered in Not operator");
-					ip++;
+					instruction_pointer += 1;
+
 					return INTERPRET_RUNTIME_ERROR;
 					break;
 				}
@@ -328,7 +326,8 @@ public:
 				Value b = stack.back();
 				stack.pop_back();
 				stack.push_back(Value(a.ValuesEqual(b)));
-				ip++;
+				instruction_pointer += 1;
+
 				break;
 			}
 
@@ -340,7 +339,8 @@ public:
 				stack.pop_back();
 				bool val = a.returnDouble() < b.returnDouble();
 				stack.push_back(std::move(Value(val)));
-				ip++;
+				instruction_pointer += 1;
+
 				break;
 			}
 
@@ -352,7 +352,8 @@ public:
 				stack.pop_back();
 				bool val = a.returnDouble() > b.returnDouble();
 				stack.emplace_back(std::move(Value(val)));
-				ip++;
+				instruction_pointer += 1;
+
 				break;
 			}
 
@@ -362,29 +363,31 @@ public:
 				stack.pop_back();
 				value.printValue();
 				printf("\n");
-				ip++;
+				instruction_pointer += 1;
+
 				break;
 			}
 
 			case OP_POP:
 			{
 				stack.pop_back();
-				ip++;
+				instruction_pointer += 1;
 				break;
 			}
 
 			case OP_DEFINE_GLOBAL:
 			{
-				std::string name = chunk->constants[chunk->opcodes[this->ip + 1]].returnString();
+				std::string name = chunk->constants[*(instruction_pointer + 1)].returnString();
 				vm_globals[name] = stack.back();
 				stack.pop_back();
-				ip += 2;
+				instruction_pointer += 2;
+
 				break;
 			}
 
 			case OP_GET_GLOBAL:
 			{
-				std::string name = chunk->constants[chunk->opcodes[this->ip + 1]].returnString();
+				std::string name = chunk->constants[*(instruction_pointer + 1)].returnString();
 				Value value;
 				try
 				{
@@ -395,60 +398,63 @@ public:
 					runtimeError("Unidenfied variable name ", name);
 					return INTERPRET_RUNTIME_ERROR;
 				}
-				ip += 2;
+				instruction_pointer += 2;
+
 				break;
 			}
 
 			case OP_SET_GLOBAL:
 			{
-				std::string name = chunk->constants[chunk->opcodes[this->ip + 1]].returnString();
+				std::string name = chunk->constants[*(instruction_pointer + 1)].returnString();
 				vm_globals[name] = stack.back();
-				ip += 2;
+				instruction_pointer += 2;
 				break;
 			}
 
 			case OP_GET_LOCAL:
 			{
-				int slot = chunk->opcodes[++ip] + (vm_stackFrames.back())->stack_start_offset;
+				int slot = *(++instruction_pointer) + (vm_stackFrames.back())->stack_start_offset;
 				stack.push_back(stack[slot]);
-				ip += 1;
+				instruction_pointer++;
 				break;
 			}
 
 			case OP_SET_LOCAL:
 			{
-				uint8_t slot = chunk->opcodes[++ip] + (vm_stackFrames.back())->stack_start_offset;
+				uint8_t slot = *(++instruction_pointer) + (vm_stackFrames.back())->stack_start_offset;
 				this->stack[slot] = stack.back();
-				ip += 1;
+				instruction_pointer += 1;
 				break;
 			}
 
 			case OP_JUMP_IF_FALSE:
 			{
-				ip += 3;
-				uint16_t offset = (uint16_t)((chunk->opcodes[ip - 2] << 8) | chunk->opcodes[ip - 1]);
+				instruction_pointer += 3;
+				uint16_t offset = (uint16_t)(*(instruction_pointer - 2) << 8) | (*(instruction_pointer - 1));
 				if (stack.back().returnBool() == false)
-					ip += offset;
+				{
+					instruction_pointer += offset;
+				}
 				break;
 			}
 
 			case OP_JUMP:
 			{
-				ip += 3;
-				uint16_t offset = (uint16_t)((chunk->opcodes[ip - 2] << 8) | chunk->opcodes[ip - 1]);
-				ip += offset;
+				instruction_pointer += 3;
+				uint16_t offset = (uint16_t)(*(instruction_pointer - 2) << 8) | (*(instruction_pointer - 1));
+				instruction_pointer += offset;
 				break;
 			}
 			case OP_LOOP:
 			{
-				ip += 3;
-				uint16_t offset = (uint16_t)((chunk->opcodes[ip - 2] << 8) | chunk->opcodes[ip - 1]);
-				ip -= offset;
+				instruction_pointer += 3;
+				uint16_t offset = (uint16_t)(*(instruction_pointer - 2) << 8) | (*(instruction_pointer - 1));
+				instruction_pointer -= offset;
 				break;
 			}
 			case OP_CALL:
 			{
-				int offset = chunk->opcodes[ip + 1];
+				int offset = *(instruction_pointer + 1);
 				std::string name_function = this->chunk->constants[offset].returnString();
 				if (chunk->function.funcName == name_function)
 				{
@@ -472,18 +478,17 @@ public:
 					NativeFn function = vm_native_functions.at(name_function).function;
 					Value *arguments = stack.size() == 0 ? NULL : &stack.back() - vm_native_functions.at(name_function).arguments + 1;
 					stack.emplace_back(function(vm_native_functions.at(name_function).arguments, arguments));
-					ip += 2;
+					instruction_pointer += 2;
 					break;
 				}
 				else
 				{
-
 					if (!isRecursive)
 					{
 						this->chunk = vm_functions[name_function].get();
 						arity = vm_functions[name_function].get()->function.arity;
-						size = this->chunk->opcodes.size();
 					}
+
 					if (!checkStackFrameOverflow())
 					{
 						runtimeError("StackFrame overflow");
@@ -492,13 +497,13 @@ public:
 					}
 					if (vm_stackFrames.size() > 2)
 					{
-						vm_stackFrames.emplace_back(framePool.allocate(name_function, stack.size() - vm_stackFrames[1]->stack_start_offset - arity, ip + 2));
+						vm_stackFrames.emplace_back(framePool.allocate(name_function, stack.size() - vm_stackFrames[1]->stack_start_offset - arity, instruction_pointer + 2));
 					}
 					else
 					{
-						vm_stackFrames.emplace_back(framePool.allocate(name_function, stack.size() - vm_stackFrames.back()->stack_start_offset - arity, ip + 2));
+						vm_stackFrames.emplace_back(framePool.allocate(name_function, stack.size() - vm_stackFrames.back()->stack_start_offset - arity, instruction_pointer + 2));
 					}
-					ip = 0;
+					instruction_pointer = chunk->opcodes.data();
 					break;
 				}
 			}
