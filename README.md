@@ -10,6 +10,12 @@ Build using CMAKE to generate project files.
 cmake -S . -B build/ -D CMAKE_BUILD_TYPE=Release
 ```
 
+Compiling with clang provides a performance boost of upto 40% depending on the program. To configure CMAKE to use clang -
+
+```
+export CXX=/usr/bin/clang++
+```
+
 # Syntax
 
 ```
