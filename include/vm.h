@@ -412,7 +412,7 @@ public:
 			Value value;
 			try
 			{
-				stack.emplace_back(std::move(vm_globals[name]));
+				stack.emplace_back(vm_globals[name]);
 			}
 			catch (const std::out_of_range &e)
 			{
