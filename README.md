@@ -16,6 +16,8 @@ Compiling with clang provides a performance boost of upto 40% depending on the p
 export CXX=/usr/bin/clang++
 ```
 
+On windows, simply clone the repo and open in Visual Studio. Modify settings to compile with clang
+
 # Syntax
 
 ```
