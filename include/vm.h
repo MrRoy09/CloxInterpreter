@@ -387,6 +387,7 @@ public:
 			Value value = stack.back();
 			stack.pop_back();
 			value.printValue();
+			std::cout << "\n";
 			instruction_pointer += 1;
 		}
 			DISPATCH();
