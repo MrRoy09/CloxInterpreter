@@ -37,7 +37,7 @@ public:
 	{
 		if (isNill)
 		{
-			std::cout << "NILL" << "\n";
+			std::cout << "NILL";
 			return;
 		}
 		switch (value.index())
