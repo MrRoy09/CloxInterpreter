@@ -2,3 +2,4 @@
 /.vs
 /test
 CMakeSettings.json
+/.vscode
