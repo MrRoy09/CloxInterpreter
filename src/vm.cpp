@@ -140,6 +140,7 @@ InterpretResult VM::run_computedGoTo()
 			this->chunk = vm_functions[(vm_stackFrames.back())->function_name].get();
 			this->chunk->function.funcName = (vm_stackFrames.back())->function_name;
 		}
+
 		stack.emplace_back(returnValue);
 	}
 		DISPATCH();
@@ -182,9 +183,11 @@ InterpretResult VM::run_computedGoTo()
 		}
 		case 1:
 		{
+
 			double val1 = stack.back().returnDouble();
 			stack.pop_back();
 			double val2 = stack.back().returnDouble();
+
 			stack.pop_back();
 			stack.emplace_back(Value(val1 + val2));
 			instruction_pointer += 1;
@@ -465,7 +468,6 @@ InterpretResult VM::run_computedGoTo()
 				runtimeError("StackFrame overflow");
 				return INTERPRET_RUNTIME_ERROR;
 			}
-			// Stack frame starts at current stack position minus arity (function arguments)
 			vm_stackFrames.emplace_back(framePool.allocate(std::string(name_function), stack.size() - arity, instruction_pointer + 2));
 			instruction_pointer = chunk->opcodes.data();
 		}
@@ -852,14 +854,7 @@ InterpretResult VM::run_switch()
 					return INTERPRET_RUNTIME_ERROR;
 					break;
 				}
-				if (vm_stackFrames.size() > 2)
-				{
-					vm_stackFrames.emplace_back(framePool.allocate(std::string(name_function), stack.size() - vm_stackFrames[1]->stack_start_offset - arity, instruction_pointer + 2));
-				}
-				else
-				{
-					vm_stackFrames.emplace_back(framePool.allocate(std::string(name_function), stack.size() - vm_stackFrames.back()->stack_start_offset - arity, instruction_pointer + 2));
-				}
+				vm_stackFrames.emplace_back(framePool.allocate(std::string(name_function), stack.size() - arity, instruction_pointer + 2));
 				instruction_pointer = chunk->opcodes.data();
 				break;
 			}
