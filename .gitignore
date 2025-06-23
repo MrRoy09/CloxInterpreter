@@ -1,5 +1,5 @@
-/build
-/.vs
-/test
+build/
+.vs/
 CMakeSettings.json
-/.vscode
+.vscode/
+tests/

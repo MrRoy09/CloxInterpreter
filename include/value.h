@@ -2,6 +2,7 @@
 #include <variant>
 #include <iostream>
 #include <stdexcept>
+#include <string_view>
 #include "objects.h"
 
 class Value
@@ -83,6 +84,19 @@ public:
 	}
 
 	std::string returnString()
+	{
+		if (std::holds_alternative<std::string>(value))
+		{
+			return std::get<std::string>(value);
+		}
+		else
+		{
+			throw std::bad_variant_access();
+		}
+	}
+	
+	// Performance-optimized version that returns string_view to avoid copies
+	std::string_view returnStringView()
 	{
 		if (std::holds_alternative<std::string>(value))
 		{

@@ -1,0 +1,34 @@
+// String operations and tests
+print "=== String Tests ===";
+
+// Basic strings
+var str1 = "Hello";
+var str2 = "World";
+print str1;
+print str2;
+
+// String concatenation
+var greeting = str1 + " " + str2;
+print greeting;
+
+// String with numbers
+var name = "Alice";
+var age = 25;
+print "Name: " + name + ", Age: " + age;
+
+// String comparison
+print "abc" == "abc";
+print "abc" == "def";
+
+// Empty string
+var empty = "";
+print empty;
+
+// String with special characters
+var special = "Tab:\t Newline:\n Quote:\" Backslash:\\";
+print special;
+
+// Multi-line string handling
+var line1 = "First line";
+var line2 = "Second line";
+print line1 + "\n" + line2;

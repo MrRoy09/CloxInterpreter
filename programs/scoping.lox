@@ -1,0 +1,51 @@
+// Variable scoping tests
+print "=== Scoping Tests ===";
+
+// Global scope
+var global = "I'm global";
+
+// Block scope
+{
+    var local = "I'm local";
+    print local;
+    print global; // Should access global
+}
+
+// Function scope
+fun testScope() {
+    var functionVar = "I'm in function";
+    print functionVar;
+    print global; // Should access global
+}
+
+testScope();
+
+// Nested scopes
+var outer = "outer";
+{
+    var inner = "inner";
+    print outer;
+    print inner;
+    
+    {
+        var nested = "nested";
+        print outer;
+        print inner;
+        print nested;
+    }
+}
+
+// Variable shadowing
+var x = "global x";
+{
+    var x = "local x";
+    print x; // Should print "local x"
+}
+print x; // Should print "global x"
+
+// Function parameter shadowing
+var param = "global param";
+fun shadow(param) {
+    print param; // Should print the parameter
+}
+shadow("function param");

@@ -1,4 +1,6 @@
 #pragma once
+#include <cstring>
+
 class Scanner
 {
 public:
@@ -80,10 +82,11 @@ public:
 			return makeToken(TOKEN_EOF);
 
 		// Handle for comments
-		if (*current == '/' && *current + 1 == '/')
+		if (*current == '/' && *(current + 1) == '/')
 		{
 			while (*current != '\n' && !isAtEnd())
 				advance();
+			return scanToken(); // Recursively scan next token after comment
 		}
 
 		char c = advance();

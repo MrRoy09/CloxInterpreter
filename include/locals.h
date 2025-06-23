@@ -1,4 +1,5 @@
 #pragma once
+#include "tokens.h"
 
 class Local {
 public:

@@ -1,0 +1,20 @@
+// Comparison and equality tests
+print "=== Comparison Tests ===";
+
+// Number comparisons
+print 5 > 3;
+print 5 < 3;
+print 5 >= 5;
+print 5 <= 5;
+print 5 == 5;
+print 5 != 3;
+
+// Boolean comparisons
+print true == true;
+print true != false;
+print false == false;
+
+// Comparison precedence
+print 5 + 3 > 7;
+print 2 * 3 == 6;
+print 10 / 2 >= 5;

@@ -1,0 +1,36 @@
+// Function definitions and calls
+print "=== Function Tests ===";
+
+// Simple function
+fun greet() {
+    print "Hello from function!";
+}
+
+greet();
+
+// Function with parameters
+fun add(a, b) {
+    return a + b;
+}
+
+print add(5, 3);
+
+// Function with local variables
+fun calculate() {
+    var x = 10;
+    var y = 20;
+    var result = x * y;
+    return result;
+}
+
+print calculate();
+
+// Recursive function
+fun factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+print factorial(5);

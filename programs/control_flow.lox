@@ -1,0 +1,37 @@
+print "=== Control Flow Tests ===";
+
+var x = 10;
+if (x > 5) {
+    print "x is greater than 5";
+} else {
+    print "x is not greater than 5";
+}
+
+var score = 85;
+if (score >= 90) {
+    print "Grade: A";
+} else if (score >= 80) {
+    print "Grade: B";
+} else if (score >= 70) {
+    print "Grade: C";
+} else {
+    print "Grade: F";
+}
+
+print "Counting to 5:";
+var i = 1;
+while (i <= 5) {
+    print i;
+    i = i + 1;
+}
+
+print "For loop countdown:";
+for (var j = 5; j > 0; j = j - 1) {
+    print j;
+}
+
+var a = true;
+var b = false;
+print a and b;
+print a or b;
+print !a;

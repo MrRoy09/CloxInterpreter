@@ -1,0 +1,33 @@
+// Fibonacci sequence - performance test
+print "=== Fibonacci Performance Test ===";
+
+// Recursive fibonacci (slower)
+fun fibRecursive(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fibRecursive(n - 1) + fibRecursive(n - 2);
+}
+
+// Iterative fibonacci (faster)
+fun fibIterative(n) {
+    if (n <= 1) {
+        return n;
+    }
+    
+    var a = 0;
+    var b = 1;
+    var temp;
+    
+    for (var i = 2; i <= n; i = i + 1) {
+        temp = a + b;
+        a = b;
+        b = temp;
+    }
+    
+    return b;
+}
+
+for (var i =0;i<10;i=i+1){
+    print(fibRecursive(i));
+}

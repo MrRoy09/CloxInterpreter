@@ -1,0 +1,22 @@
+// Test file for comment handling
+print "=== Comment Handling Tests ===";
+
+// Single line comment at start
+var x = 5; // Comment after code
+print x;
+
+// Multiple comments
+// Comment 1
+// Comment 2
+var y = 10;
+print y;
+
+// Comment with special characters // !@#$%^&*()
+var z = x + y; // Another comment
+print z; // Final comment
+
+// Empty comment line
+//
+print "Comments should be ignored";
+
+// Comment at end of file

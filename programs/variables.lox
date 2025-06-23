@@ -1,0 +1,31 @@
+// Variable declaration and assignment
+print "=== Variable Tests ===";
+
+// Basic variables
+var a = 10;
+var b = 20;
+print a;
+print b;
+
+// Variable assignment
+a = 15;
+print a;
+
+// Using variables in expressions
+var c = a + b;
+print c;
+
+// String variables
+var greeting = "Hello";
+var name = "World";
+print greeting + " " + name;
+
+// Boolean variables
+var isTrue = true;
+var isFalse = false;
+print isTrue;
+print isFalse;
+
+// Nil variables
+var nothing = nil;
+print nothing;

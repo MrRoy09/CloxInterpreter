@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <string>
+#include <string_view>
 typedef enum {
 	// Single-character tokens.
 	TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
@@ -50,16 +52,43 @@ public:
 	const char* start;
 	int length;
 	int line;
+	std::string lexeme;
+	
 	Token(TokenType type, const char* start, int length, int line) {
 		this->type = type;
 		this->start = start;
 		this->length = length;
 		this->line = line;
+		if (start && length > 0) {
+			this->lexeme = std::string(start, length);
+		}
 	}
+	
 	Token() {
 		this->type = TOKEN_NONE;
-		this->start = " ";
+		this->start = nullptr;
 		this->length = 0;
 		this->line = 0;
+		this->lexeme = "";
+	}
+	
+	std::string getText() const {
+		if (!lexeme.empty()) {
+			return lexeme;
+		}
+		if (start && length > 0) {
+			return std::string(start, length);
+		}
+		return "";
+	}
+	
+	std::string_view getTextView() const {
+		if (!lexeme.empty()) {
+			return lexeme;
+		}
+		if (start && length > 0) {
+			return std::string_view(start, length);
+		}
+		return "";
 	}
 };
